@@ -81,29 +81,22 @@ class Enlace:
         # vir quebrado de várias formas diferentes - por exemplo, podem vir
         # apenas pedaços de um quadro, ou um pedaço de quadro seguido de um
         # pedaço de outro, ou vários quadros de uma vez só.
-             
-        # print('len(dados):', len(dados))
-         #print('dados:', bytes(dados))   
+  
          for i in range(len(dados)):
-            #print('dados:', bytes(dados[i:i+1]))
-            #print('aux:', bytes(self.aux))
-            #print('recebido:', bytes(self.recebido))
             if (bytes(dados[i:i+1]) != b'\xC0') & (bytes(dados[i:i+1]) != b'\xDC') & (bytes(dados[i:i+1]) != b'\xDD') & (bytes(dados[i:i+1]) != b'\xDB'):
-                #print('bytes1:', bytes(dados[i:i+1]))
                 self.recebido += dados[i:i+1]
-                #print('recebido5:', bytes(self.recebido[i-1:i]))
                             
             elif (bytes(dados[i:i+1]) == b'\xDB'):
                 
                 if (bytes(dados[i+1:i+2]) == b'\xDC'):
                     self.recebido += bytearray(b'\xC0')
-                #elif (bytes(dados[i+1:i+2]) == b'\xDD'):
-                 #   self.recebido += dados[i:i+1]
-                else:
+                elif (bytes(dados[i+1:i+2]) == b'\xDD'):
+                    self.recebido += dados[i:i+1]
+                    self.aux = bytearray(b'')
+                elif (i+1) == len(dados):
                     self.aux = bytearray(b'\xDB')
                     
             elif (bytes(dados[i:i+1]) == b'\xDD') & (self.aux == b'\xDB'):       
-                #print('aqui')
                 self.recebido += self.aux
                 self.aux = bytearray(b'')
             
@@ -111,18 +104,37 @@ class Enlace:
                 self.recebido += bytearray(b'\xC0')
            
            # Enviar Recebido
-            elif (bytes(dados[i:i+1]) == b'\xC0') & (self.recebido != bytearray(b'')):
-                print('recebido5:', self.recebido)
-                self.callback(bytes(self.recebido))
-                self.recebido = bytearray(b'')
+           
+            elif (len(dados) >= 1) & (len(dados) == (i+1)) & (self.recebido != bytearray(b'')) & (bytes(dados[i:i+1]) == b'\xC0'):
                 
-            elif ((i+1) == len(dados)) & (self.recebido != bytearray(b'')) & (self.recebido != b'\xC0'):
-                self.callback(bytes(self.recebido))
-                print('recebido1:', self.recebido)
-                self.recebido = bytearray(b'')
+                try:
+                    self.callback(bytes(self.recebido))
+                except:
+                    # ignora a exceção, mas mostra na tela
+                    import traceback
+                    traceback.print_exc()
+                finally:
+                    # faça aqui a limpeza necessária para garantir que não vão sobrar
+                    # pedaços do datagrama em nenhum buffer mantido por você
+                    self.recebido = bytearray(b'')
+                    self.aux = bytearray(b'')
                 
            
+            elif (bytes(dados[i:i+1]) == b'\xC0') & (self.recebido != bytearray(b'')):
+                try:
+                    self.callback(bytes(self.recebido))
+                except:
+                    # ignora a exceção, mas mostra na tela
+                    import traceback
+                    traceback.print_exc()
+                finally:
+                    # faça aqui a limpeza necessária para garantir que não vão sobrar
+                    # pedaços do datagrama em nenhum buffer mantido por você
+                    self.recebido = bytearray(b'')
+                    self.aux = bytearray(b'')
+                                
                 
-
             
-            
+                
+         
+        
