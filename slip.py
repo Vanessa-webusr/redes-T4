@@ -43,6 +43,7 @@ class Enlace:
     def __init__(self, linha_serial):
         self.linha_serial = linha_serial
         self.linha_serial.registrar_recebedor(self.__raw_recv)
+        self.recebido = bytearray(b'')
 
     def registrar_recebedor(self, callback):
         self.callback = callback
@@ -79,4 +80,19 @@ class Enlace:
         # vir quebrado de várias formas diferentes - por exemplo, podem vir
         # apenas pedaços de um quadro, ou um pedaço de quadro seguido de um
         # pedaço de outro, ou vários quadros de uma vez só.
-        pass
+                
+         for i in range(len(dados)):
+            if bytes(dados[i:i+1]) != b'\xC0':
+                self.recebido += dados[i:i+1]
+                
+            elif (bytes(dados[i:i+1]) != b'\xC0') & ((i+1) == len(dados)):
+                self.callback(bytes(self.recebido))
+                self.recebido = bytearray(b'')
+                
+            elif ((i+1) == len(dados)) & (self.recebido != bytearray(b'')) & (bytes(dados[i:i+1]) == b'\xC0'):
+                self.callback(bytes(self.recebido))
+                self.recebido = bytearray(b'')
+                
+            elif (bytes(dados[i:i+1]) == b'\xC0') & (self.recebido != bytearray(b'')):
+                self.callback(bytes(self.recebido))
+                self.recebido = bytearray(b'')
