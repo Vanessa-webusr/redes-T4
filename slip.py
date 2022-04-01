@@ -51,13 +51,24 @@ class Enlace:
         # TODO: Preencha aqui com o código para enviar o datagrama pela linha
         # serial, fazendo corretamente a delimitação de quadros e o escape de
         # sequências especiais, de acordo com o protocolo CamadaEnlace (RFC 1055).
-       # pass
-       #print('serial:', self.linha_serial)
+
        a = bytearray(b'\xC0')
-       b = bytearray(b'\xC0')
+       c = bytearray(b'\xDB')
+       d = bytearray(b'\xDC')
+       e = bytearray(b'\xDD')
+
        for i in range(len(datagrama)):
-        a.append(datagrama[i])
-       a.append(b[0])
+        if bytes(datagrama[i:i+1]) == b'\xC0':
+            a.append(c[0])
+            a.append(d[0])
+        elif bytes(datagrama[i:i+1]) == b'\xDB':
+            a.append(c[0])
+            a.append(e[0])
+        else:
+            a.append(datagrama[i])
+
+       a.append(a[0])
+
        self.linha_serial.enviar(bytes(a))
        
     def __raw_recv(self, dados):
